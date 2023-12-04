@@ -218,9 +218,6 @@ def imagens_da_pasta(pasta):
 
   return imagens_pasta
 
-def bits_para_string(fluxo_de_bits):
-    return ''.join(chr(int(fluxo_de_bits[i:i+8], 2)) for i in range(0, len(fluxo_de_bits), 8))
-
 def esconder_mensagem(imagem, string):
     # Converta a string em uma matriz de bytes.
     string_bytes = string.encode('utf-8')
@@ -310,45 +307,32 @@ def esconder_mensagem_rgb(imagem_cobertura, mensagem, rgb):
 
 def extrair_mensagem(imagem_estego):
     """
-    Extrai uma mensagem de uma imagem usando a técnica de PVD em um único canal.
+    Extrai uma mensagem de uma imagem usando a técnica de PVD em todos os canais.
 
     Args:
         imagem_estego: A imagem esteganografada.
-        rgb: O canal de cor a ser lido ('r', 'g' ou 'b').
 
     Returns:
-        A mensagem secreta.
+        As mensagens secretas de cada canal.
     """
     # Separe os canais de cor da imagem esteganografada.
     estego_b, estego_g, estego_r = cv2.split(imagem_estego)
 
-    # Escolha o canal de cor da imagem esteganografada com base no argumento rgb.
-    if rgb == 'r':
-        estego_canal = estego_r
-    elif rgb == 'g':
-        estego_canal = estego_g
-    elif rgb == 'b':
-        estego_canal = estego_b
-    else:
-        raise ValueError("rgb deve ser 'r', 'g' ou 'b'")
+    # Crie um dicionário para armazenar os bits da mensagem de cada canal.
+    bits_mensagem = {'r': [], 'g': [], 'b': []}
 
-    # Crie uma lista para armazenar os bits da mensagem.
-    bits_mensagem = []
+    # Percorra cada pixel em cada canal da imagem esteganografada.
+    for canal, estego_canal in zip(['r', 'g', 'b'], [estego_r, estego_g, estego_b]):
+        for y in range(estego_canal.shape[0]):
+            for x in range(estego_canal.shape[1]):
+                # Obtenha o bit menos significativo do pixel.
+                bit_mensagem = estego_canal[y, x] & 0x01
 
-    # Percorra cada pixel no canal escolhido da imagem esteganografada.
-    for y in range(estego_canal.shape[0]):
-        for x in range(estego_canal.shape[1]):
-            # Obtenha o bit menos significativo do pixel.
-            bit_mensagem = estego_canal[y, x] & 0x01
+                # Adicione o bit à lista de bits da mensagem.
+                bits_mensagem[canal].append(bit_mensagem)
 
-            # Adicione o bit à lista de bits da mensagem.
-            bits_mensagem.append(bit_mensagem)
-
-    # Converta a lista de bits em uma string binária.
-    mensagem_binaria = ''.join(str(bit) for bit in bits_mensagem)
-
-    # Converta a string binária de volta em uma string de texto.
-    mensagem = ''.join(chr(int(mensagem_binaria[i:i+8], 2)) for i in range(0, len(mensagem_binaria), 8))
+    # Converta a lista de bits em uma string binária e depois em uma string de texto para cada canal.
+    mensagem = {canal: ''.join(chr(int(''.join(str(bit) for bit in bits_mensagem[canal][i:i+8]), 2)) for i in range(0, len(bits_mensagem[canal]) - len(bits_mensagem[canal]) % 8, 8)) for canal in ['r', 'g', 'b']}
 
     return mensagem
 
@@ -368,6 +352,60 @@ def comparar_area_string(imagem, mensagem):
 
     return nova_imagem
     
+def comparar_mensagens(mensagem):
+    """
+    Compara a mensagem extraída com todas as strings salvas em um arquivo, caractere por caractere.
+
+    Args:
+        mensagem: A mensagem extraída.
+
+    Returns:
+        Um dicionário indicando se a mensagem extraída corresponde a alguma string no arquivo para cada canal.
+    """
+    # Leia todas as strings do arquivo.
+    caminho_arquivo = os.path.join('imagens_marca_dagua_inserida', 'mensagem.txt')
+    with open(caminho_arquivo, 'r') as f:
+        strings_salvas = f.read().splitlines()
+
+    # Crie um dicionário para armazenar os resultados da comparação para cada canal.
+    resultado_comparacao = {}
+
+    # Crie um dicionário para armazenar as mensagens decodificadas de cada canal.
+    string_normal = {}
+
+    # Compare a mensagem extraída com todas as strings salvas para cada canal.
+        # Compare a mensagem extraída com todas as strings salvas para cada canal.
+    for canal in ['r', 'g', 'b']:
+        # Decodifica a string de escape de bytes de volta para uma string.
+        print(mensagem)
+        try:
+            string_normal[canal] = bytes(mensagem[canal], 'latin1').decode('utf-8')
+        except UnicodeDecodeError:
+            string_normal[canal] = "A string não pode ser decodificada usando utf-8."
+
+        print(string_normal)
+        for string_salva in strings_salvas:
+            # Determine a string menor e a string maior.
+            if len(string_normal[canal]) < len(string_salva):
+                string_menor = string_normal[canal]
+                string_maior = string_salva
+            else:
+                string_menor = string_salva
+                string_maior = string_normal[canal]
+
+            # Compare as strings caractere por caractere.
+            caracteres_iguais = 0
+            for i in range(len(string_menor)):
+                if string_menor[i] == string_maior[i]:
+                    caracteres_iguais += 1
+
+            # Verifique se pelo menos 50% dos caracteres são iguais.
+            if caracteres_iguais / len(string_menor) >= 0.5:
+                resultado_comparacao[canal] = True
+            else:
+                resultado_comparacao[canal] = False
+
+    return resultado_comparacao
 
 if __name__ == "__main__":
 
@@ -407,9 +445,13 @@ if __name__ == "__main__":
 
   ###################################### Extrair Mensagem ###############################################
   # Extraia a imagem secreta da imagem estego
-  """print("Selecione a Imagem Para procurar marca d'água")
+  print("Selecione a Imagem Para procurar marca d'água")
   imagem_estego = carregar_imagem()
 
   #marca_dagua_extraida = extrair_imagem(imagem_estego)
 
-  imagem_secreta = extrair_imagem(imagem_estego)"""
+  mensagem_secreta = extrair_mensagem(imagem_estego)
+
+  resultado_comparacao = comparar_mensagens(mensagem_secreta)
+
+  print(resultado_comparacao)
