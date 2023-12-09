@@ -3,7 +3,8 @@ Este é um script em Python que permite esconder uma imagem dentro de outra usan
 
 ## Pré-requisitos
 Python 3.x
-Bibliotecas Python: cv2, numpy, matplotlib, tkinter
+Bibliotecas Python: **cv2**, **numpy**, **matplotlib**, **tkinter**
+
 bash
 Copy code
 pip install opencv-python numpy matplotlib
@@ -12,7 +13,8 @@ Execute o script Python.
 Selecione a imagem de cobertura (imagem na qual você deseja esconder a imagem secreta).
 Selecione a imagem secreta que você deseja esconder na imagem de cobertura.
 O script irá esconder a imagem secreta na imagem de cobertura e exibir a imagem esteganografada.
-Funções Principais
+
+## Funções Principais
 - `esconder_imagem(imagem_cobertura, imagem_secreta)`
 Esta função aceita duas imagens como entrada (imagem_cobertura e imagem_secreta) e retorna a imagem esteganografada e a imagem secreta.
 
@@ -27,4 +29,4 @@ Esta função obtém todas as imagens de uma determinada pasta.
 
 ### Notas
 O script utiliza a técnica PVD em canais RGB para esconder e extrair a imagem.
-A função `psnr`, `calcular_correlacao_entre_marcas_dagua`, `redimensionar` são funções externas desenvolvidas por outros membros da equipe
+As funções `psnr`, `calcular_correlacao_entre_marcas_dagua`, `redimensionar` são funções externas desenvolvidas por outros membros da equipe
