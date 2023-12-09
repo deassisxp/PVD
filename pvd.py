@@ -35,36 +35,12 @@ def esconder_imagem(imagem_cobertura, imagem_secreta):
 
     return imagem_estego, imagem_secreta
 
-def esconder_imagem_canal(imagem_cobertura, imagem_secreta):
-  """
-  Oculta uma imagem dentro de outra usando a técnica de PVD em um único canal.
-
-  Args:
-    imagem_cobertura: A imagem de cobertura.
-    imagem_secreta: A imagem secreta.
-
-  Returns:
-    A imagem estego.
-  """
-  # Crie uma cópia da imagem de cobertura para armazenar o resultado.
-  imagem_estego = np.copy(imagem_cobertura)
-
-  # Percorra cada pixel na imagem secreta.
-  for y in range(imagem_secreta.shape[0]):
-    for x in range(imagem_secreta.shape[1]):
-      # Obtenha os 4 bits mais significativos do pixel na imagem secreta.
-      bits_mais_significativos = (imagem_secreta[y, x] >> 4) & 0x0F
-
-      # Limpe os 4 bits menos significativos do pixel na imagem de cobertura.
-      imagem_estego[y, x] &= 0xF0
-
-      # Substitua os 4 bits menos significativos do pixel na imagem de cobertura pelos 4 bits mais significativos do pixel na imagem secreta.
-      imagem_estego[y, x] |= bits_mais_significativos
-
-  return imagem_estego
-
 def esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta, rgb):
-    # Crie uma cópia da imagem de cobertura para armazenar o resultado.
+    # Verifique se a imagem de cobertura é um canal único (em escala de cinza)
+    if len(imagem_cobertura.shape) < 3 or imagem_cobertura.shape[2] == 1:
+        return "A mensagem não pode ser codificada porque a imagem de cobertura é um canal único."
+    
+    # Cria uma cópia da imagem de cobertura para armazenar o resultado.
     imagem_estego = np.copy(imagem_cobertura)
 
     # Separe os canais de cor das imagens de cobertura e secreta.
@@ -121,15 +97,18 @@ def extrair_imagem(imagem_estego):
   imagem_secreta_g = np.zeros_like(imagem_estego)
   imagem_secreta_b = np.zeros_like(imagem_estego)
 
+  # Defina os níveis de quantização.
+  niveis = np.array([0, 16, 32, 48, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 255])
+
   # Verifique se a imagem estego é em escala de cinza.
   if len(imagem_estego.shape) == 2:
     # Se a imagem estego for em escala de cinza, extraia a imagem secreta do canal cinza.
     imagem_secreta_gray = np.zeros_like(imagem_estego)
     canais = [('gray', imagem_estego, imagem_secreta_gray)]
-    cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeG.jpg"), imagem_secreta_gray)
+    cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeGr.jpg"), imagem_secreta_gray)
     return imagem_secreta_gray
   else:
-    # Se a imagem estego for colorida, extraia a imagem secreta dos canais R, G e B.
+    # Se a imagem estego for colorida, extrai a imagem secreta dos canais R, G e B.
     estego_b, estego_g, estego_r = cv2.split(imagem_estego)
     canais = [('r', estego_r, imagem_secreta_r), ('g', estego_g, imagem_secreta_g), ('b', estego_b, imagem_secreta_b)]
 
@@ -143,44 +122,26 @@ def extrair_imagem(imagem_estego):
         # Mova os 4 bits menos significativos para a posição dos 4 bits mais significativos.
         bits_menos_significativos <<= 4
 
+        indice = np.argmin(np.abs(niveis - bits_menos_significativos))
+        bits_menos_significativos = niveis[indice]
+
         # Armazene os bits extraídos na imagem secreta correspondente.
         imagem_secreta[y, x] = bits_menos_significativos
-        media = (estego_canal[y, x] >> 4) / 4
         imagem_secreta[y, x] &= 0xF0
-        int(media)
-        imagem_secreta[y, x] |= int(media)
-
-  imagens_pasta = imagens_da_pasta("imagens_marca_dagua_inserida")
-  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeR.jpg"), imagem_secreta_r)
-  for nome_imagem in imagens_pasta:
-    marca_dagua_extraida = cv2.imread(nome_imagem)
-    if marca_dagua_extraida.shape != imagem_secreta_r.shape:
-    # Se as imagens não tiverem o mesmo tamanho, redimensione a imagem secreta.
-      imagem_secreta = redimensionar(marca_dagua_extraida, imagem_secreta_r)
-    correlacao = calcular_correlacao_entre_marcas_dagua(marca_dagua_extraida, imagem_secreta)
-    print(f"Correlação entre as marcas d'água: {correlacao}")
-
-  imagens_pasta = imagens_da_pasta("imagens_marca_dagua_inserida")
-  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeG.jpg"), imagem_secreta_g)
-  for nome_imagem in imagens_pasta:
-    marca_dagua_extraida = cv2.imread(nome_imagem)
-    if marca_dagua_extraida.shape != imagem_secreta_g.shape:
-    # Se as imagens não tiverem o mesmo tamanho, redimensione a imagem secreta.
-      imagem_secreta = redimensionar(marca_dagua_extraida, imagem_secreta_g)
-    correlacao = calcular_correlacao_entre_marcas_dagua(marca_dagua_extraida, imagem_secreta)
-    print(f"Correlação entre as marcas d'água: {correlacao}")
-
-  imagens_pasta = imagens_da_pasta("imagens_marca_dagua_inserida")
-  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeR.jpg"), imagem_secreta_b)
-  for nome_imagem in imagens_pasta:
-    marca_dagua_extraida = cv2.imread(nome_imagem)
-    if marca_dagua_extraida.shape != imagem_secreta_b.shape:
-    # Se as imagens não tiverem o mesmo tamanho, redimensione a imagem secreta.
-      imagem_secreta = redimensionar(marca_dagua_extraida, imagem_secreta_b)
-    correlacao = calcular_correlacao_entre_marcas_dagua(marca_dagua_extraida, imagem_secreta)
-    print(f"Correlação entre as marcas d'água: {correlacao}")
-
-  return imagem_secreta_r, imagem_secreta_g, imagem_secreta_b
+        imagem_secreta[y, x] |= int(bits_menos_significativos / 16)
+  tem_imagem_secreta = False
+  for nome_canal, estego_canal, imagem_secreta in canais:
+    imagens_pasta = imagens_da_pasta("imagens_marca_dagua_inserida")
+    for nome_imagem in imagens_pasta:
+      marca_dagua_extraida = cv2.imread(nome_imagem)
+      correlacao = calcular_correlacao_entre_marcas_dagua(marca_dagua_extraida, imagem_secreta)
+      #print(f"Correlação entre as marcas d'água {nome_canal}: {correlacao}")
+      if correlacao > 0.5:
+            print(f"A imagem informada parece conter uma imagem secreta.")
+            tem_imagem_secreta = True
+            break
+  if not tem_imagem_secreta:
+    print(f"A imagem informada não parece conter uma imagem secreta.")
 
 def carregar_imagem():
     root = tk.Tk()
@@ -423,15 +384,15 @@ if __name__ == "__main__":
 
 ###################################### Extrair Imagem ###############################################
   # Extraia a imagem secreta da imagem estego
-  """print("Selecione a Imagem Para procurar marca d'água")
+  print("Selecione a Imagem Para procurar marca d'água")
   imagem_estego = carregar_imagem()
 
   #marca_dagua_extraida = extrair_imagem(imagem_estego)
 
-  imagem_secreta = extrair_imagem(imagem_estego)"""
+  imagem_secreta = extrair_imagem(imagem_estego)
 
 ###################################### Ocultar Mensagem ##############################################
-  # Oculte a imagem secreta na imagem de cobertura
+  # Oculte a mensagem secreta na imagem de cobertura
   """print("Selecione a Imagem Principal")
   imagem_cobertura = carregar_imagem()
   mensagem = input("Digite uma mensagem: ")
@@ -445,7 +406,7 @@ if __name__ == "__main__":
 
   ###################################### Extrair Mensagem ###############################################
   # Extraia a imagem secreta da imagem estego
-  print("Selecione a Imagem Para procurar marca d'água")
+  """print("Selecione a Imagem Para procurar marca d'água")
   imagem_estego = carregar_imagem()
 
   #marca_dagua_extraida = extrair_imagem(imagem_estego)
@@ -454,4 +415,4 @@ if __name__ == "__main__":
 
   resultado_comparacao = comparar_mensagens(mensagem_secreta)
 
-  print(resultado_comparacao)
+  print(resultado_comparacao)"""
