@@ -19,12 +19,12 @@ Esta função aceita duas imagens como entrada (imagem_cobertura e imagem_secret
 - `extrair_imagem(imagem_estego)`
 Esta função aceita uma imagem esteganografada como entrada (imagem_estego) e extrai a imagem secreta, exibindo-a e indicando se a imagem parece conter ou não uma marca d'água.
 
-`carregar_imagem()`
+- `carregar_imagem()`
 Esta função abre uma janela para selecionar o arquivo de imagem e retorna a imagem selecionada.
 
-`imagens_da_pasta(pasta)`
+- `imagens_da_pasta(pasta)`
 Esta função obtém todas as imagens de uma determinada pasta.
 
 ### Notas
 O script utiliza a técnica PVD em canais RGB para esconder e extrair a imagem.
-A função psnr, calcular_correlacao_entre_marcas_dagua, redimensionar são funções externas desenvolvidas por outros membros da equipe
+A função `psnr`, `calcular_correlacao_entre_marcas_dagua`, `redimensionar` são funções externas desenvolvidas por outros membros da equipe
