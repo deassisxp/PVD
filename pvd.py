@@ -13,15 +13,15 @@ from funcoes import calcular_correlacao_entre_marcas_dagua
 from funcoes import redimensionar
 
 
-def esconder_imagem(imagem_cobertura, imagem_secreta):
+def esconder_imagem_pvd(imagem_cobertura, imagem_secreta):
     # Verifique se as imagens têm o mesmo tamanho.
     if imagem_cobertura.shape != imagem_secreta.shape:
         # Se as imagens não tiverem o mesmo tamanho, redimensione a imagem secreta.
         imagem_secreta = redimensionar(imagem_cobertura, imagem_secreta)
 
-    imagem_estego_r, imagem_secreta_r = esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta,'r')
-    imagem_estego_g, imagem_secreta_g = esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta,'g')
-    imagem_estego_b, imagem_secreta_b = esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta,'b')
+    imagem_estego_r, imagem_secreta_r = esconder_imagem_canal_rgb_pvd(imagem_cobertura, imagem_secreta,'r')
+    imagem_estego_g, imagem_secreta_g = esconder_imagem_canal_rgb_pvd(imagem_cobertura, imagem_secreta,'g')
+    imagem_estego_b, imagem_secreta_b = esconder_imagem_canal_rgb_pvd(imagem_cobertura, imagem_secreta,'b')
 
     # Escolha a imagem estego com a melhor PSNR.
     psnr_r = psnr(imagem_cobertura, imagem_estego_r) 
@@ -35,7 +35,7 @@ def esconder_imagem(imagem_cobertura, imagem_secreta):
 
     return imagem_estego, imagem_secreta
 
-def esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta, rgb):
+def esconder_imagem_canal_rgb_pvd(imagem_cobertura, imagem_secreta, rgb):
     # Verifique se a imagem de cobertura é um canal único (em escala de cinza)
     if len(imagem_cobertura.shape) < 3 or imagem_cobertura.shape[2] == 1:
         return "A mensagem não pode ser codificada porque a imagem de cobertura é um canal único."
@@ -82,7 +82,7 @@ def esconder_imagem_canal_rgb(imagem_cobertura, imagem_secreta, rgb):
 
     return imagem_estego, secreta_canal
 
-def extrair_imagem(imagem_estego):
+def extrair_imagem_pvd(imagem_estego):
   """
   Extrai uma imagem escondida dentro de outra usando a técnica de PVD em todos os canais.
 
@@ -399,7 +399,7 @@ if __name__ == "__main__":
   print("Selecione a Imagem marca d'água")
   imagem_secreta = carregar_imagem()
 
-  imagem_estego, imagem_marca_dagua = esconder_imagem(imagem_cobertura, imagem_secreta)
+  imagem_estego, imagem_marca_dagua = esconder_imagem_pvd(imagem_cobertura, imagem_secreta)
   nome_imagem = input("Digite o nome da imagem a ser salva: ")
   cv2.imwrite(os.path.join("imagens_marca_dagua_inserida", nome_imagem), imagem_marca_dagua)
   cv2.imwrite(os.path.join("imagens_com_marca_dagua", nome_imagem), imagem_estego)"""
@@ -411,7 +411,7 @@ if __name__ == "__main__":
 
   #marca_dagua_extraida = extrair_imagem(imagem_estego)
 
-  imagem_secreta_r, imagem_secreta_g, imagem_secreta_b = extrair_imagem(imagem_estego)
+  imagem_secreta_r, imagem_secreta_g, imagem_secreta_b = extrair_imagem_pvd(imagem_estego)
 
   cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", f'imagem_secreta_r.png'), imagem_secreta_r)
   cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", f'imagem_secreta_g.png'), imagem_secreta_g)
