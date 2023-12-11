@@ -105,7 +105,6 @@ def extrair_imagem(imagem_estego):
     # Se a imagem estego for em escala de cinza, extraia a imagem secreta do canal cinza.
     imagem_secreta_gray = np.zeros_like(imagem_estego)
     canais = [('gray', imagem_estego, imagem_secreta_gray)]
-    cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", "testeGr.jpg"), imagem_secreta_gray)
     return imagem_secreta_gray
   else:
     # Se a imagem estego for colorida, extrai a imagem secreta dos canais R, G e B.
@@ -113,11 +112,11 @@ def extrair_imagem(imagem_estego):
     canais = [('r', estego_r, imagem_secreta_r), ('g', estego_g, imagem_secreta_g), ('b', estego_b, imagem_secreta_b)]
 
   # Percorra cada pixel em cada canal da imagem estego.
-  for nome_canal, estego_canal, imagem_secreta in canais:
-    for y in range(estego_canal.shape[0]):
-      for x in range(estego_canal.shape[1]):
+  nome_canal_r, estego_r, imagem_secreta_r = canais[0]
+  for y in range(estego_r.shape[0]):
+    for x in range(estego_r.shape[1]):
         # Extraia os 4 bits menos significativos do pixel no canal escolhido da imagem estego.
-        bits_menos_significativos = estego_canal[y, x] & 0x0F
+        bits_menos_significativos = estego_r[y, x] & 0x0F
 
         # Mova os 4 bits menos significativos para a posição dos 4 bits mais significativos.
         bits_menos_significativos <<= 4
@@ -126,22 +125,45 @@ def extrair_imagem(imagem_estego):
         bits_menos_significativos = niveis[indice]
 
         # Armazene os bits extraídos na imagem secreta correspondente.
-        imagem_secreta[y, x] = bits_menos_significativos
-        imagem_secreta[y, x] &= 0xF0
-        imagem_secreta[y, x] |= int(bits_menos_significativos / 16)
-  tem_imagem_secreta = False
-  for nome_canal, estego_canal, imagem_secreta in canais:
-    imagens_pasta = imagens_da_pasta("imagens_marca_dagua_inserida")
-    for nome_imagem in imagens_pasta:
-      marca_dagua_extraida = cv2.imread(nome_imagem)
-      correlacao = calcular_correlacao_entre_marcas_dagua(marca_dagua_extraida, imagem_secreta)
-      #print(f"Correlação entre as marcas d'água {nome_canal}: {correlacao}")
-      if correlacao > 0.5:
-            print(f"A imagem informada parece conter uma imagem secreta.")
-            tem_imagem_secreta = True
-            break
-  if not tem_imagem_secreta:
-    print(f"A imagem informada não parece conter uma imagem secreta.")
+        imagem_secreta_r[y, x] = bits_menos_significativos
+        imagem_secreta_r[y, x] &= 0xF0
+        imagem_secreta_r[y, x] |= int(bits_menos_significativos / 16)
+  
+  nome_canal_g, estego_g, imagem_secreta_g = canais[1]
+  for y in range(estego_g.shape[0]):
+      for x in range(estego_g.shape[1]):
+        # Extraia os 4 bits menos significativos do pixel no canal escolhido da imagem estego.
+        bits_menos_significativos = estego_g[y, x] & 0x0F
+
+        # Mova os 4 bits menos significativos para a posição dos 4 bits mais significativos.
+        bits_menos_significativos <<= 4
+
+        indice = np.argmin(np.abs(niveis - bits_menos_significativos))
+        bits_menos_significativos = niveis[indice]
+
+        # Armazene os bits extraídos na imagem secreta correspondente.
+        imagem_secreta_g[y, x] = bits_menos_significativos
+        imagem_secreta_g[y, x] &= 0xF0
+        imagem_secreta_g[y, x] |= int(bits_menos_significativos / 16)
+  
+  nome_canal_b, estego_b, imagem_secreta_b = canais[2]
+  for y in range(estego_b.shape[0]):
+      for x in range(estego_b.shape[1]):
+        # Extraia os 4 bits menos significativos do pixel no canal escolhido da imagem estego.
+        bits_menos_significativos = estego_b[y, x] & 0x0F
+
+        # Mova os 4 bits menos significativos para a posição dos 4 bits mais significativos.
+        bits_menos_significativos <<= 4
+
+        indice = np.argmin(np.abs(niveis - bits_menos_significativos))
+        bits_menos_significativos = niveis[indice]
+
+        # Armazene os bits extraídos na imagem secreta correspondente.
+        imagem_secreta_b[y, x] = bits_menos_significativos
+        imagem_secreta_b[y, x] &= 0xF0
+        imagem_secreta_b[y, x] |= int(bits_menos_significativos / 16)
+    
+  return imagem_secreta_r, imagem_secreta_g, imagem_secreta_b
 
 def carregar_imagem():
     root = tk.Tk()
@@ -389,7 +411,11 @@ if __name__ == "__main__":
 
   #marca_dagua_extraida = extrair_imagem(imagem_estego)
 
-  imagem_secreta = extrair_imagem(imagem_estego)
+  imagem_secreta_r, imagem_secreta_g, imagem_secreta_b = extrair_imagem(imagem_estego)
+
+  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", f'imagem_secreta_r.png'), imagem_secreta_r)
+  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", f'imagem_secreta_g.png'), imagem_secreta_g)
+  cv2.imwrite(os.path.join("imagens_marca_dagua_extraida", f'imagem_secreta_b.png'), imagem_secreta_b)
 
 ###################################### Ocultar Mensagem ##############################################
   # Oculte a mensagem secreta na imagem de cobertura
